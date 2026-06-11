@@ -107,7 +107,7 @@
     .kpi-card .kpi-label { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
 
     /* Tabela de dependência (cabeçalho agrupado por exercício) */
-    .dep-table { width: 100%; border-collapse: collapse; font-size: .82rem; min-width: 760px; }
+    .dep-table { width: 100%; border-collapse: collapse; font-size: .82rem; min-width: 640px; }
     .dep-table th, .dep-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
     .dep-table th:first-child, .dep-table td:first-child { text-align: left; }
     .dep-table thead th { color: var(--muted); font-weight: 600; }
@@ -117,8 +117,8 @@
     .dep-table .na { color: var(--muted); }
 
     /* Tabela de distribuição populacional */
-    .dist-table { width: 100%; border-collapse: collapse; font-size: .8rem; min-width: 1100px; }
-    .dist-table th, .dist-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+    .dist-table { width: 100%; border-collapse: collapse; font-size: .8rem; min-width: 640px; table-layout: fixed; }
+    .dist-table th, .dist-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: right; white-space: normal; word-break: break-word; }
     .dist-table th:first-child, .dist-table td:first-child { text-align: left; }
     .dist-table thead th { color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; }
     .dist-table thead th:hover { color: var(--primary); }
@@ -160,6 +160,14 @@
     .multiselect-item:hover { background: var(--bg); }
     .multiselect-item input { cursor: pointer; }
     .multiselect-empty { display: none; padding: 6px; color: var(--muted); font-size: .85rem; text-align: center; }
+
+    /* Telas/iframes estreitos (ex.: incorporação no Google Sites) */
+    @media (max-width: 700px) {
+      main { padding: 0 10px 40px; }
+      .card { padding: 14px; }
+      .dist-table, .dep-table { font-size: .72rem; min-width: 0; }
+      .dist-table th, .dist-table td, .dep-table th, .dep-table td { padding: 6px 4px; }
+    }
   </style>
 </head>
 <body>
