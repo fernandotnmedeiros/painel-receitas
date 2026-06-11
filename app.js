@@ -115,10 +115,14 @@ async function carregarDataset() {
     VALORLANCAMENTO: Number(r.VALORLANCAMENTO) || 0,
   }));
 
-  populacao = populacaoCsv.map(p => ({
-    ...p,
-    populacao_2022: Number(p.populacao_2022) || 0,
-  }));
+  // Recife não possui dados de receita no dataset (TCE-PE) e por isso é
+  // excluído de todo o painel: tabela/KPIs de distribuição, grupos
+  // populacionais e seleção de município nas demais abas.
+  populacao = populacaoCsv
+    .map(p => ({ ...p, populacao_2022: Number(p.populacao_2022) || 0 }))
+    .filter(p => p.municipio !== 'Recife');
+
+  dataset = dataset.filter(r => r.MUNICIPIO !== 'Recife');
 
   municipios = [...new Set(dataset.map(r => r.MUNICIPIO))].filter(Boolean);
 
