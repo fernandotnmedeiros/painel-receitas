@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Receitas Municipais — TCE-PE</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f3f1ec;
+      --card: #ffffff;
+      --primary: #102a43;
+      --primary-deep: #0a1c2e;
+      --accent: #c9762f;
+      --text: #1c2733;
+      --muted: #6b7a8d;
+      --border: #e2e1da;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(120deg, var(--primary) 0%, var(--primary-deep) 100%);
+      color: #fff;
+      padding: 18px 32px;
+    }
+    header h1 { font-size: 1.3rem; font-weight: 600; }
+    header p { font-size: .85rem; opacity: .75; margin-top: 4px; }
+    main {
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 20px 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 14px -8px rgba(16,42,67,.15);
+    }
+    .card h2 { font-size: 1rem; margin-bottom: 12px; color: var(--primary); }
+    .form-row { display: flex; gap: 20px; flex-wrap: wrap; }
+    .form-group { flex: 1; min-width: 240px; }
+    .form-group label { display: block; font-size: .8rem; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
+    .hint { font-size: .75rem; color: var(--muted); margin-top: 6px; }
+    .actions { display: flex; gap: 12px; margin-top: 16px; align-items: center; flex-wrap: wrap; }
+    button, .btn {
+      background: var(--accent); color: #fff; border: none; border-radius: 8px;
+      padding: 10px 20px; font-size: .9rem; font-weight: 600; cursor: pointer;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+    }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    button.secondary, .btn.secondary { background: var(--primary); }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--card); }
+    .table-wrap { max-height: 420px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+    .filtros { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+    .filtros select { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: .82rem; }
+    .chart-wrap { height: 360px; }
+    .badge { background: var(--bg); border-radius: 999px; padding: 2px 10px; font-size: .75rem; color: var(--muted); }
+
+    /* Abas */
+    .tabs { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .tab-btn {
+      background: rgba(255,255,255,.08); color: rgba(255,255,255,.75); border: 1px solid rgba(255,255,255,.18);
+      border-radius: 999px; padding: 7px 18px; font-size: .85rem; font-weight: 500; cursor: pointer;
+    }
+    .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .tab-content { display: none; flex-direction: column; gap: 20px; }
+    .tab-content.active { display: flex; }
+
+    /* Árvore hierárquica de receitas */
+    .tree-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    .tree-table th { text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--border); color: var(--muted); font-weight: 600; }
+    .tree-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    .tree-table td.valor { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .tree-row { cursor: pointer; user-select: none; }
+    .tree-row:hover { background: var(--bg); }
+    .tree-row.nivel-0 td:first-child { font-weight: 700; color: var(--primary); }
+    .tree-row.nivel-1 td:first-child { font-weight: 600; }
+    .tree-row.nivel-3 { cursor: default; }
+    .tree-row.nivel-3:hover { background: transparent; }
+    .tree-toggle { display: inline-block; width: 1.2em; text-align: center; color: var(--accent); font-weight: 700; }
+    .tree-row.nivel-3 .tree-toggle { visibility: hidden; }
+    .tree-label { padding-left: calc(var(--nivel, 0) * 22px); }
+
+    /* KPIs */
+    .kpi-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .kpi-card {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 14px 18px; flex: 1; min-width: 160px; max-width: 280px; text-align: center;
+    }
+    .kpi-card .kpi-valor {
+      font-size: 1.5rem; font-weight: 700; color: var(--primary);
+      white-space: normal; overflow-wrap: break-word; line-height: 1.2;
+    }
+    .kpi-card .kpi-valor.kpi-valor-pequeno { font-size: 1.1rem; }
+    .kpi-card .kpi-sub { font-size: .85rem; font-weight: 600; margin-top: 2px; }
+    .kpi-card .kpi-label { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
+
+    /* Tabela de dependência (cabeçalho agrupado por exercício) */
+    .dep-table { width: 100%; border-collapse: collapse; font-size: .82rem; min-width: 760px; }
+    .dep-table th, .dep-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+    .dep-table th:first-child, .dep-table td:first-child { text-align: left; }
+    .dep-table thead th { color: var(--muted); font-weight: 600; }
+    .dep-table thead tr:first-child th { text-align: center; border-bottom: 1px solid var(--border); }
+    .dep-table thead tr:first-child th.ano { background: var(--bg); border-radius: 6px 6px 0 0; }
+    .dep-table tbody tr:last-child td { font-weight: 700; color: var(--primary); border-top: 2px solid var(--border); }
+    .dep-table .na { color: var(--muted); }
+
+    /* Tabela de distribuição populacional */
+    .dist-table { width: 100%; border-collapse: collapse; font-size: .8rem; min-width: 1100px; }
+    .dist-table th, .dist-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+    .dist-table th:first-child, .dist-table td:first-child { text-align: left; }
+    .dist-table thead th { color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; }
+    .dist-table thead th:hover { color: var(--primary); }
+    .dist-table thead tr:first-child th { text-align: center; border-bottom: 1px solid var(--border); cursor: default; }
+    .dist-table thead tr:first-child th:hover { color: var(--muted); }
+    .dist-table thead tr:first-child th.grupo { background: var(--bg); border-radius: 6px 6px 0 0; }
+    .diff-pos { color: #1a7f37; font-weight: 700; }
+    .diff-neg { color: #c0392b; font-weight: 700; }
+    .diff-zero { color: var(--muted); }
+    .diff-pos::before { content: "▲ "; }
+    .diff-neg::before { content: "▼ "; }
+    .kpi-valor.diff-pos, .kpi-sub.diff-pos { color: #1a7f37; }
+    .kpi-valor.diff-neg, .kpi-sub.diff-neg { color: #c0392b; }
+    .kpi-valor.diff-zero, .kpi-sub.diff-zero { color: var(--muted); }
+
+    /* Multiselect com checkboxes pesquisável */
+    .multiselect { position: relative; }
+    .multiselect-toggle {
+      width: 100%; text-align: left; background: #fff; border: 1px solid var(--border);
+      border-radius: 8px; padding: 9px 12px; font-size: .9rem; cursor: pointer; color: var(--text);
+    }
+    .multiselect-toggle:hover { border-color: var(--accent); }
+    .multiselect-panel {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+      background: #fff; border: 1px solid var(--border); border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.12); padding: 10px; max-height: 320px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .multiselect-panel[hidden] { display: none; }
+    .multiselect-busca {
+      width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: .85rem;
+    }
+    .multiselect-actions { display: flex; gap: 8px; }
+    .multiselect-actions button { flex: 1; padding: 5px 8px; font-size: .78rem; }
+    .multiselect-list { overflow-y: auto; flex: 1; border-top: 1px solid var(--border); padding-top: 6px; }
+    .multiselect-item {
+      display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 4px; font-size: .85rem; cursor: pointer;
+    }
+    .multiselect-item:hover { background: var(--bg); }
+    .multiselect-item input { cursor: pointer; }
+    .multiselect-empty { display: none; padding: 6px; color: var(--muted); font-size: .85rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Receitas Municipais — TCE-PE</h1>
+    <p>Painel de receitas dos municípios de Pernambuco (Dados Abertos / TCE-PE)</p>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="detalhamento" type="button">Detalhamento por Município</button>
+      <button class="tab-btn" data-tab="dependencia" type="button">Dependência de Receita Própria</button>
+      <button class="tab-btn" data-tab="dependencia-grupo" type="button">Dependência por Grupo Populacional</button>
+      <button class="tab-btn" data-tab="distribuicao" type="button">Distribuição por População</button>
+    </div>
+  </header>
+
+  <main>
+  <div id="tab-detalhamento" class="tab-content active">
+    <section class="card">
+      <h2>Detalhamento da receita por município e exercício</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="detMunicipio">Município</label>
+          <select id="detMunicipio"></select>
+        </div>
+        <div class="form-group">
+          <label for="detAno">Exercício (ano)</label>
+          <select id="detAno"></select>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:10px">
+        Clique em uma linha para expandir/recolher os níveis: Categoria → Origem → Espécie → Descrição.
+        Os valores são a soma de todos os meses do exercício selecionado.
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="filtros">
+        <span class="badge" id="detResumo"></span>
+        <button id="btnExpandirTudo" class="secondary" type="button" style="margin-left:auto">Expandir tudo</button>
+        <button id="btnRecolherTudo" class="secondary" type="button">Recolher tudo</button>
+      </div>
+      <div class="table-wrap">
+        <table class="tree-table">
+          <thead>
+            <tr>
+              <th>Natureza da receita</th>
+              <th class="valor">Total lançado (R$)</th>
+            </tr>
+          </thead>
+          <tbody id="detTbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div id="tab-dependencia" class="tab-content">
+    <section class="card">
+      <h2>Dependência da receita própria</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="depMunicipio">Município</label>
+          <select id="depMunicipio"></select>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:10px">
+        Compara a receita tributária própria (IPTU, ITBI, ISS, IRPF, Taxas) com as
+        Transferências Correntes recebidas pelo município, em 2023, 2024 e 2025.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Dependência de transferências correntes</h2>
+      <div class="hint" style="margin-bottom:12px">
+        Total da espécie "Impostos" ÷ Total da origem "Transferências Correntes", por exercício.
+      </div>
+      <div class="kpi-row" id="depKpis"></div>
+    </section>
+
+    <section class="card">
+      <h2>Receita Tributária x Transferências Correntes</h2>
+      <div class="table-wrap">
+        <table class="dep-table" id="depTabela"></table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Comparativo por exercício</h2>
+      <div class="chart-wrap">
+        <canvas id="depGrafico"></canvas>
+      </div>
+    </section>
+  </div>
+
+  <div id="tab-dependencia-grupo" class="tab-content">
+    <section class="card">
+      <h2>Dependência da receita própria por grupo populacional</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="depGrupoSelecao">Grupo populacional (Censo 2022 — IBGE)</label>
+          <select id="depGrupoSelecao">
+            <option value="1">Grupo 1 — população &gt; 300 mil habitantes</option>
+            <option value="2">Grupo 2 — população entre 100 mil e 300 mil habitantes</option>
+            <option value="3">Grupo 3 — população entre 50 mil e 100 mil habitantes</option>
+            <option value="4">Grupo 4 — população entre 20 mil e 50 mil habitantes</option>
+            <option value="5">Grupo 5 — população entre 10 mil e 20 mil habitantes</option>
+            <option value="6">Grupo 6 — população inferior a 10 mil habitantes</option>
+          </select>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:10px">
+        Os valores apresentados são a <strong>soma consolidada</strong> de todos os municípios do grupo
+        selecionado, comparando a receita tributária própria (IPTU, ITBI, ISS, IRPF, Taxas) com as
+        Transferências Correntes, em 2023, 2024 e 2025.
+      </div>
+      <div class="hint" id="depGrupoMunicipios" style="margin-top:8px"></div>
+    </section>
+
+    <section class="card">
+      <h2>Dependência de transferências correntes</h2>
+      <div class="hint" style="margin-bottom:12px">
+        Total da espécie "Impostos" ÷ Total da origem "Transferências Correntes", por exercício
+        (somatório de todos os municípios do grupo).
+      </div>
+      <div class="kpi-row" id="depGrupoKpis"></div>
+    </section>
+
+    <section class="card">
+      <h2>Receita Tributária x Transferências Correntes</h2>
+      <div class="table-wrap">
+        <table class="dep-table" id="depGrupoTabela"></table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Comparativo por exercício</h2>
+      <div class="chart-wrap">
+        <canvas id="depGrupoGrafico"></canvas>
+      </div>
+    </section>
+  </div>
+
+  <div id="tab-distribuicao" class="tab-content">
+    <section class="card">
+      <h2>Distribuição da Cota-Parte ICMS por critério populacional</h2>
+      <div class="hint" style="margin-bottom:12px">
+        Compara o valor efetivamente recebido por cada município a título de Cota-Parte do ICMS com um
+        valor recalculado <strong>exclusivamente pela população</strong>: o total estadual da cota é
+        dividido pela soma da população de todos os municípios (exceto Recife) e multiplicado pela
+        população de cada município.
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="distAno">Exercício (ano)</label>
+          <select id="distAno"></select>
+        </div>
+        <div class="form-group">
+          <label for="distMunicipiosToggle">Municípios</label>
+          <div class="multiselect" id="distMunicipiosWrap">
+            <button type="button" class="multiselect-toggle" id="distMunicipiosToggle">Todos os municípios</button>
+            <div class="multiselect-panel" id="distMunicipiosPanel" hidden>
+              <input type="text" id="distMunicipiosBusca" class="multiselect-busca" placeholder="Buscar município..." />
+              <div class="multiselect-actions">
+                <button type="button" id="btnDistTodos" class="secondary">Selecionar todos</button>
+                <button type="button" id="btnDistLimpar" class="secondary">Limpar seleção</button>
+              </div>
+              <div class="multiselect-list" id="distMunicipiosList"></div>
+            </div>
+          </div>
+          <div class="hint">Nenhum selecionado = todos os municípios.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Diferenças (Recalculado − Recebido)</h2>
+      <div class="kpi-row" id="distKpis"></div>
+    </section>
+
+    <section class="card">
+      <div class="table-wrap">
+        <table class="dist-table" id="distTabela">
+          <thead>
+            <tr>
+              <th data-sort="municipio">Município</th>
+              <th data-sort="icmsRecebido">Valor Recebido</th>
+              <th data-sort="icmsRecalc">Valor Recalculado (per capita)</th>
+              <th data-sort="diffIcms">Diferença (Recalculado − Recebido)</th>
+            </tr>
+          </thead>
+          <tbody id="distTbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
