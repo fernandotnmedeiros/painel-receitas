@@ -440,7 +440,17 @@ function criarGraficoDependencia(canvasId, chartAtual, dados) {
       maintainAspectRatio: false,
       plugins: { legend: { position: 'top' } },
       scales: {
-        y: { ticks: { callback: v => fmtMoeda(v) } },
+        y: {
+          type: 'logarithmic',
+          ticks: {
+            callback: v => {
+              // Exibe apenas potências de 10 para evitar poluição no eixo
+              const log = Math.log10(v);
+              if (Math.abs(log - Math.round(log)) < 1e-9) return fmtMoeda(v);
+              return null;
+            },
+          },
+        },
       },
     },
   });
