@@ -421,17 +421,22 @@ function gerarTabelaDependenciaHTML(dados) {
   `;
 }
 
-// Cria (ou recria) o gráfico de barras "valor de cada linha, por ano"
-function criarGraficoDependencia(canvasId, chartAtual, dados) {
+// Linhas separadas para os dois gráficos
+const LINHAS_RECEITA_PROPRIA = LINHAS_DEPENDENCIA.filter(l => l.chave !== 'TRANSFERENCIAS');
+const LINHAS_TRANSFERENCIAS  = LINHAS_DEPENDENCIA.filter(l => l.chave === 'TRANSFERENCIAS');
+
+// Cria (ou recria) um gráfico de barras para um subconjunto de linhas
+function criarGraficoDependencia(canvasId, chartAtual, dados, linhas) {
   const ctx = document.getElementById(canvasId);
+  if (!ctx) return null;
   if (chartAtual) chartAtual.destroy();
   return new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: LINHAS_DEPENDENCIA.map(l => l.rotulo),
+      labels: linhas.map(l => l.rotulo),
       datasets: ANOS_DEPENDENCIA.map(ano => ({
         label: ano,
-        data: LINHAS_DEPENDENCIA.map(l => dados[ano].linhas[l.chave] || 0),
+        data: linhas.map(l => dados[ano].linhas[l.chave] || 0),
         backgroundColor: COR_ANO[ano],
       })),
     },
@@ -440,23 +445,13 @@ function criarGraficoDependencia(canvasId, chartAtual, dados) {
       maintainAspectRatio: false,
       plugins: { legend: { position: 'top' } },
       scales: {
-        y: {
-          type: 'logarithmic',
-          ticks: {
-            callback: v => {
-              // Exibe apenas potências de 10 para evitar poluição no eixo
-              const log = Math.log10(v);
-              if (Math.abs(log - Math.round(log)) < 1e-9) return fmtMoeda(v);
-              return null;
-            },
-          },
-        },
+        y: { ticks: { callback: v => fmtMoeda(v) } },
       },
     },
   });
 }
 
-let depChart;
+let depChart, depChartTransf;
 
 function renderizarDependencia() {
   const municipio = document.getElementById('depMunicipio').value;
@@ -466,7 +461,8 @@ function renderizarDependencia() {
   if (!municipio) {
     kpisEl.innerHTML = '<div class="hint">Selecione um município para ver os indicadores.</div>';
     tabelaEl.innerHTML = '';
-    if (depChart) { depChart.destroy(); depChart = null; }
+    if (depChart)      { depChart.destroy();      depChart = null; }
+    if (depChartTransf){ depChartTransf.destroy(); depChartTransf = null; }
     return;
   }
 
@@ -474,7 +470,8 @@ function renderizarDependencia() {
 
   kpisEl.innerHTML = gerarKpisDependenciaHTML(dados);
   tabelaEl.innerHTML = gerarTabelaDependenciaHTML(dados);
-  depChart = criarGraficoDependencia('depGrafico', depChart, dados);
+  depChart      = criarGraficoDependencia('depGrafico',      depChart,      dados, LINHAS_RECEITA_PROPRIA);
+  depChartTransf = criarGraficoDependencia('depGraficoTransf', depChartTransf, dados, LINHAS_TRANSFERENCIAS);
 }
 
 // ── Dependência por grupo populacional ───────────────────────────
@@ -499,7 +496,7 @@ function municipiosDoGrupo(grupoId) {
   });
 }
 
-let depGrupoChart;
+let depGrupoChart, depGrupoChartTransf;
 
 function initDependenciaGrupo() {
   document.getElementById('depGrupoSelecao').addEventListener('change', renderizarDependenciaGrupo);
@@ -517,7 +514,8 @@ function renderizarDependenciaGrupo() {
     kpisEl.innerHTML = '<div class="hint">Nenhum município encontrado para este grupo.</div>';
     tabelaEl.innerHTML = '';
     municipiosEl.innerHTML = '';
-    if (depGrupoChart) { depGrupoChart.destroy(); depGrupoChart = null; }
+    if (depGrupoChart)      { depGrupoChart.destroy();      depGrupoChart = null; }
+    if (depGrupoChartTransf){ depGrupoChartTransf.destroy(); depGrupoChartTransf = null; }
     return;
   }
 
@@ -530,7 +528,8 @@ function renderizarDependenciaGrupo() {
 
   kpisEl.innerHTML = gerarKpisDependenciaHTML(dados);
   tabelaEl.innerHTML = gerarTabelaDependenciaHTML(dados);
-  depGrupoChart = criarGraficoDependencia('depGrupoGrafico', depGrupoChart, dados);
+  depGrupoChart      = criarGraficoDependencia('depGrupoGrafico',      depGrupoChart,      dados, LINHAS_RECEITA_PROPRIA);
+  depGrupoChartTransf = criarGraficoDependencia('depGrupoGraficoTransf', depGrupoChartTransf, dados, LINHAS_TRANSFERENCIAS);
 }
 
 // ── Aba: Distribuição por critério populacional ──────────────────
