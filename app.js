@@ -5,8 +5,9 @@
 // exemplo:
 //   const URL_RECEITAS  = 'https://docs.google.com/spreadsheets/d/e/SUA_URL/pub?gid=0&single=true&output=csv';
 //   const URL_POPULACAO = 'https://docs.google.com/spreadsheets/d/e/SUA_URL/pub?gid=1&single=true&output=csv';
-const URL_RECEITAS = 'data/receitas_resumo.csv';
-const URL_POPULACAO = 'data/populacao.csv';
+const _v = Date.now(); // cache-busting: garante que o browser sempre busca a versão mais recente
+const URL_RECEITAS  = `data/receitas_resumo.csv?v=${_v}`;
+const URL_POPULACAO = `data/populacao.csv?v=${_v}`;
 
 let municipios = [];
 let populacao = [];
