@@ -583,6 +583,7 @@ function initDistribuicao() {
         ordenacaoDistribuicao.direcao = ordenacaoDistribuicao.direcao === 'asc' ? 'desc' : 'asc';
       } else {
         ordenacaoDistribuicao = { coluna, direcao: coluna === 'municipio' ? 'asc' : 'desc' };
+        // diffPct: ordenação descendente (maiores ganhos % primeiro)
       }
       renderizarDistribuicao();
     });
@@ -649,9 +650,13 @@ function preencherFiltrosDistribuicao() {
   atualizarToggleDistMunicipios();
 }
 
-// Calcula, para o ano informado, os valores recebidos, recalculados (por
-// critério populacional) e as diferenças, para todos os municípios com
-// população cadastrada.
+// Calcula, para o ano informado, os valores recebidos, recalculados e as
+// diferenças, para todos os municípios com população cadastrada.
+//
+// Metodologia do valor recalculado:
+//   - 20% do valor recebido por cada município é mantido (parcela fixa)
+//   - Os 80% restantes do total estadual são redistribuídos per capita
+//   icmsRecalc = icmsRecebido × 0,20 + totalIcms × 0,80 × (pop / populacaoBase)
 function calcularDistribuicao(ano) {
   const registrosAno = dataset.filter(r => r.ANOREFERENCIA === ano);
 
@@ -667,31 +672,22 @@ function calcularDistribuicao(ano) {
     totalIcms += valor;
   }
 
-  // População total considerada na razão per capita (todos os municípios,
-  // exceto Recife).
+  // População total (base para distribuição per capita dos 80%)
   let populacaoBase = 0;
   for (const p of populacao) {
-    if (p.municipio === 'Recife') continue;
     populacaoBase += Number(p.populacao_2022) || 0;
   }
 
-  const ratioIcms = populacaoBase ? totalIcms / populacaoBase : 0;
+  const poolPerCapita = populacaoBase ? (totalIcms * 0.80) / populacaoBase : 0;
 
-  // Recife é excluído da tabela: além de não ter dados de receita
-  // disponíveis no dataset, sua população já é desconsiderada na base de
-  // cálculo per capita (ver `populacaoBase` acima).
-  return populacao.filter(p => p.municipio !== 'Recife').map(p => {
+  return populacao.map(p => {
     const pop = Number(p.populacao_2022) || 0;
     const icmsRecebido = recebidoPorMunicipio.get(p.municipio) || 0;
-    const icmsRecalc = ratioIcms * pop;
+    const icmsRecalc = (icmsRecebido * 0.20) + (poolPerCapita * pop);
+    const diffIcms = icmsRecalc - icmsRecebido;
+    const diffPct = icmsRecebido ? (diffIcms / icmsRecebido) * 100 : null;
 
-    return {
-      municipio: p.municipio,
-      populacao: pop,
-      icmsRecebido,
-      icmsRecalc,
-      diffIcms: icmsRecalc - icmsRecebido,
-    };
+    return { municipio: p.municipio, populacao: pop, icmsRecebido, icmsRecalc, diffIcms, diffPct };
   });
 }
 
@@ -722,17 +718,26 @@ function renderizarDistribuicao() {
   linhas = [...linhas].sort((a, b) => {
     let cmp;
     if (coluna === 'municipio') cmp = a.municipio.localeCompare(b.municipio, 'pt-BR');
-    else cmp = a[coluna] - b[coluna];
+    else cmp = (a[coluna] ?? -Infinity) - (b[coluna] ?? -Infinity);
     return direcao === 'asc' ? cmp : -cmp;
   });
+
+  const fmtNumero = v => v.toLocaleString('pt-BR');
+  const fmtDiffPct = (v) => {
+    if (v === null) return '<span class="na">—</span>';
+    const sinal = v > 0 ? '+' : '';
+    return `${sinal}${v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+  };
 
   const tbody = document.getElementById('distTbody');
   tbody.innerHTML = linhas.map(l => `
     <tr>
       <td>${l.municipio}</td>
+      <td style="text-align:right">${fmtNumero(l.populacao)}</td>
       <td>${fmtMoeda(l.icmsRecebido)}</td>
       <td>${fmtMoeda(l.icmsRecalc)}</td>
       <td class="${classeDiff(l.diffIcms)}">${fmtDiff(l.diffIcms)}</td>
+      <td class="${classeDiff(l.diffIcms)}">${fmtDiffPct(l.diffPct)}</td>
     </tr>
   `).join('');
 
