@@ -4,367 +4,961 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Receitas Municipais — TCE-PE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
+    /* ── Tokens ─────────────────────────────────────────────────── */
     :root {
-      --bg: #f3f1ec;
-      --card: #ffffff;
-      --primary: #102a43;
-      --primary-deep: #0a1c2e;
-      --accent: #c9762f;
-      --text: #1c2733;
-      --muted: #6b7a8d;
-      --border: #e2e1da;
+      --navy:        #0d2137;
+      --navy-mid:    #163450;
+      --navy-light:  #1e4570;
+      --accent:      #e0752e;
+      --accent-warm: #f0914c;
+      --gold:        #f5b942;
+      --bg:          #f0ede6;
+      --bg-alt:      #e8e4db;
+      --card:        #ffffff;
+      --text:        #131e2b;
+      --text-soft:   #3d4e5e;
+      --muted:       #7a8b9c;
+      --border:      #dedad0;
+      --border-mid:  #c8c3b8;
+      --success:     #1a7f45;
+      --danger:      #c0392b;
+      --success-bg:  #eaf6ef;
+      --danger-bg:   #fdf0ee;
+      --radius-sm:   6px;
+      --radius-md:   10px;
+      --radius-lg:   16px;
+      --shadow-sm:   0 1px 4px rgba(13,33,55,.07);
+      --shadow-md:   0 4px 16px rgba(13,33,55,.1);
+      --shadow-lg:   0 8px 32px rgba(13,33,55,.14);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Reset ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-family: 'DM Sans', system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
+
+    /* ── Header ─────────────────────────────────────────────────── */
     header {
-      background: linear-gradient(120deg, var(--primary) 0%, var(--primary-deep) 100%);
+      background: var(--navy);
       color: #fff;
-      padding: 18px 32px;
+      padding: 0 32px;
+      position: relative;
+      overflow: hidden;
     }
-    header h1 { font-size: 1.3rem; font-weight: 600; }
-    header p { font-size: .85rem; opacity: .75; margin-top: 4px; }
+
+    /* Geometric background pattern */
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(
+          -45deg,
+          transparent,
+          transparent 28px,
+          rgba(255,255,255,.025) 28px,
+          rgba(255,255,255,.025) 29px
+        );
+      pointer-events: none;
+    }
+
+    /* Accent line at top */
+    header::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--gold) 100%);
+    }
+
+    .header-inner {
+      position: relative;
+      z-index: 1;
+      padding: 22px 0 0;
+    }
+
+    .header-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .header-badge {
+      background: rgba(224,117,46,.25);
+      border: 1px solid rgba(224,117,46,.4);
+      color: var(--accent-warm);
+      font-family: 'DM Mono', monospace;
+      font-size: .68rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 999px;
+    }
+
+    .header-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      opacity: .6;
+    }
+
+    header h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      line-height: 1.1;
+      color: #fff;
+    }
+
+    header h1 span {
+      color: var(--accent-warm);
+    }
+
+    header p {
+      font-size: .82rem;
+      color: rgba(255,255,255,.5);
+      margin-top: 5px;
+      font-weight: 400;
+    }
+
+    /* ── Tab Navigation ─────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-top: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .tab-btn {
+      background: transparent;
+      color: rgba(255,255,255,.5);
+      border: none;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      padding: 12px 20px 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color .2s, border-color .2s;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: rgba(255,255,255,.8);
+    }
+
+    .tab-btn.active {
+      color: #fff;
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .tab-content { display: none; flex-direction: column; gap: 18px; animation: fadeUp .25s ease; }
+    .tab-content.active { display: flex; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Main Layout ────────────────────────────────────────────── */
     main {
-      max-width: 1100px;
+      max-width: 1140px;
       margin: 24px auto;
       padding: 0 20px 60px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 18px;
     }
+
+    /* ── Cards ──────────────────────────────────────────────────── */
     .card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 14px -8px rgba(16,42,67,.15);
+      border-radius: var(--radius-lg);
+      padding: 22px 24px;
+      box-shadow: var(--shadow-sm);
     }
-    .card h2 { font-size: 1rem; margin-bottom: 12px; color: var(--primary); }
-    .form-row { display: flex; gap: 20px; flex-wrap: wrap; }
-    .form-group { flex: 1; min-width: 240px; }
-    .form-group label { display: block; font-size: .8rem; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
-    .hint { font-size: .75rem; color: var(--muted); margin-top: 6px; }
-    .actions { display: flex; gap: 12px; margin-top: 16px; align-items: center; flex-wrap: wrap; }
+
+    .card h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card h2::before {
+      content: '';
+      display: block;
+      width: 3px;
+      height: 16px;
+      background: linear-gradient(180deg, var(--accent) 0%, var(--gold) 100%);
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* ── Form Controls ──────────────────────────────────────────── */
+    .form-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .form-group { flex: 1; min-width: 200px; }
+
+    .form-group label {
+      display: block;
+      font-size: .72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    select {
+      width: 100%;
+      padding: 9px 32px 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--card);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .88rem;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a8b9c' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(224,117,46,.12);
+    }
+    select:hover { border-color: var(--border-mid); }
+
+    input[type="text"] {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 9px 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .88rem;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(224,117,46,.12);
+    }
+
+    .hint {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    /* ── Buttons ────────────────────────────────────────────────── */
     button, .btn {
-      background: var(--accent); color: #fff; border: none; border-radius: 8px;
-      padding: 10px 20px; font-size: .9rem; font-weight: 600; cursor: pointer;
-      text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 9px 18px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: background .15s, transform .1s, box-shadow .15s;
     }
-    button:disabled { opacity: .6; cursor: not-allowed; }
-    button.secondary, .btn.secondary { background: var(--primary); }
+    button:hover:not(:disabled), .btn:hover {
+      background: var(--accent-warm);
+      box-shadow: 0 4px 12px rgba(224,117,46,.3);
+      transform: translateY(-1px);
+    }
+    button:active:not(:disabled) { transform: translateY(0); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    button.secondary, .btn.secondary {
+      background: transparent;
+      color: var(--text-soft);
+      border: 1.5px solid var(--border);
+    }
+    button.secondary:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--border-mid);
+      box-shadow: none;
+      transform: none;
+    }
+
+    .actions { display: flex; gap: 10px; margin-top: 16px; align-items: center; flex-wrap: wrap; }
+
+    /* ── Badge ──────────────────────────────────────────────────── */
+    .badge {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: .73rem;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* ── Tables (generic) ───────────────────────────────────────── */
+    .table-wrap {
+      max-height: 460px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+    }
+
     table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
-    th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--card); }
-    .table-wrap { max-height: 420px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
-    .filtros { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
-    .filtros select { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: .82rem; }
-    .chart-wrap { height: 360px; }
-    .badge { background: var(--bg); border-radius: 999px; padding: 2px 10px; font-size: .75rem; color: var(--muted); }
 
-    /* Abas */
-    .tabs { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
-    .tab-btn {
-      background: rgba(255,255,255,.08); color: rgba(255,255,255,.75); border: 1px solid rgba(255,255,255,.18);
-      border-radius: 999px; padding: 7px 18px; font-size: .85rem; font-weight: 500; cursor: pointer;
+    th, td {
+      text-align: left;
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
     }
-    .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-    .tab-content { display: none; flex-direction: column; gap: 20px; }
-    .tab-content.active { display: flex; }
 
-    /* Árvore hierárquica de receitas */
-    .tree-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
-    .tree-table th { text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--border); color: var(--muted); font-weight: 600; }
-    .tree-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
-    .tree-table td.valor { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .tree-row { cursor: pointer; user-select: none; }
+    th {
+      color: var(--muted);
+      font-size: .72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      position: sticky;
+      top: 0;
+      background: var(--card);
+      z-index: 1;
+    }
+
+    tbody tr { transition: background .1s; }
+    tbody tr:nth-child(even) { background: #fafaf8; }
+    tbody tr:hover { background: #f5f2ec; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .filtros {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+      align-items: center;
+    }
+
+    .filtros select {
+      width: auto;
+      min-width: 160px;
+      font-size: .82rem;
+      padding: 7px 28px 7px 10px;
+    }
+
+    .chart-wrap { height: 340px; }
+
+    /* ── Tree Table (Detalhamento) ──────────────────────────────── */
+    .tree-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+
+    .tree-table th {
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--border);
+      color: var(--muted);
+      font-size: .72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      background: var(--card);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .tree-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); }
+    .tree-table td.valor {
+      text-align: right;
+      font-family: 'DM Mono', monospace;
+      font-size: .82rem;
+      white-space: nowrap;
+    }
+
+    .tree-row { cursor: pointer; user-select: none; transition: background .1s; }
     .tree-row:hover { background: var(--bg); }
-    .tree-row.nivel-0 td:first-child { font-weight: 700; color: var(--primary); }
-    .tree-row.nivel-1 td:first-child { font-weight: 600; }
+
+    .tree-row.nivel-0 td:first-child {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      color: var(--navy);
+      font-size: .88rem;
+    }
+    .tree-row.nivel-0 { background: #fafaf8; }
+    .tree-row.nivel-0:hover { background: #f3f0e8; }
+
+    .tree-row.nivel-1 td:first-child { font-weight: 600; color: var(--text); }
     .tree-row.nivel-3 { cursor: default; }
     .tree-row.nivel-3:hover { background: transparent; }
-    .tree-toggle { display: inline-block; width: 1.2em; text-align: center; color: var(--accent); font-weight: 700; }
+    .tree-row.nivel-3 td { color: var(--text-soft); font-size: .8rem; }
+
+    .tree-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      background: rgba(224,117,46,.1);
+      color: var(--accent);
+      font-size: .7rem;
+      font-weight: 700;
+      margin-right: 2px;
+    }
     .tree-row.nivel-3 .tree-toggle { visibility: hidden; }
-    .tree-label { padding-left: calc(var(--nivel, 0) * 22px); }
+    .tree-label { padding-left: calc(var(--nivel, 0) * 24px); display: flex; align-items: center; gap: 4px; }
 
-    /* KPIs */
-    .kpi-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    /* ── KPI Cards ──────────────────────────────────────────────── */
+    .kpi-row { display: flex; gap: 14px; flex-wrap: wrap; }
+
     .kpi-card {
-      background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
-      padding: 14px 18px; flex: 1; min-width: 160px; max-width: 280px; text-align: center;
+      flex: 1;
+      min-width: 150px;
+      max-width: 260px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow .2s, transform .2s;
     }
-    .kpi-card .kpi-valor {
-      font-size: 1.5rem; font-weight: 700; color: var(--primary);
-      white-space: normal; overflow-wrap: break-word; line-height: 1.2;
-    }
-    .kpi-card .kpi-valor.kpi-valor-pequeno { font-size: 1.1rem; }
-    .kpi-card .kpi-sub { font-size: .85rem; font-weight: 600; margin-top: 2px; }
-    .kpi-card .kpi-label { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
+    .kpi-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 
-    /* Tabela de dependência (cabeçalho agrupado por exercício) */
-    .dep-table { width: 100%; border-collapse: collapse; font-size: .82rem; min-width: 640px; }
-    .dep-table th, .dep-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--gold));
+    }
+
+    .kpi-card .kpi-valor {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: -.03em;
+      line-height: 1;
+      white-space: normal;
+      overflow-wrap: break-word;
+    }
+    .kpi-card .kpi-valor.kpi-valor-pequeno { font-size: 1.3rem; }
+    .kpi-card .kpi-sub {
+      font-family: 'DM Mono', monospace;
+      font-size: .82rem;
+      font-weight: 500;
+      margin-top: 4px;
+      color: var(--text-soft);
+    }
+    .kpi-card .kpi-label {
+      font-size: .68rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      margin-top: 8px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    /* ── Dependência Table ──────────────────────────────────────── */
+    .dep-table { width: 100%; border-collapse: collapse; font-size: .8rem; min-width: 640px; }
+    .dep-table th, .dep-table td {
+      padding: 9px 11px;
+      border-bottom: 1px solid var(--border);
+      text-align: right;
+      white-space: nowrap;
+    }
     .dep-table th:first-child, .dep-table td:first-child { text-align: left; }
-    .dep-table thead th { color: var(--muted); font-weight: 600; }
-    .dep-table thead tr:first-child th { text-align: center; border-bottom: 1px solid var(--border); }
-    .dep-table thead tr:first-child th.ano { background: var(--bg); border-radius: 6px 6px 0 0; }
-    .dep-table tbody tr:last-child td { font-weight: 700; color: var(--primary); border-top: 2px solid var(--border); }
+    .dep-table thead th {
+      color: var(--muted);
+      font-size: .7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      background: var(--card);
+    }
+    .dep-table thead tr:first-child th {
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      font-family: 'Syne', sans-serif;
+      font-size: .78rem;
+      color: var(--navy);
+    }
+    .dep-table thead tr:first-child th.ano {
+      background: var(--bg);
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    }
+    .dep-table tbody td { font-family: 'DM Mono', monospace; font-size: .78rem; }
+    .dep-table tbody td:first-child { font-family: 'DM Sans', sans-serif; font-size: .82rem; color: var(--text); }
+    .dep-table tbody tr:nth-child(even) { background: #fafaf8; }
+    .dep-table tbody tr:hover { background: #f5f2ec; }
+    .dep-table tbody tr:last-child td {
+      font-weight: 700;
+      color: var(--navy);
+      border-top: 2px solid var(--border);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .82rem;
+    }
     .dep-table .na { color: var(--muted); }
 
-    /* Tabela de distribuição populacional */
+    /* ── Distribuição Table ─────────────────────────────────────── */
     .dist-table { width: 100%; border-collapse: collapse; font-size: .8rem; min-width: 640px; table-layout: fixed; }
-    .dist-table th, .dist-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: right; white-space: normal; word-break: break-word; }
+    .dist-table th, .dist-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: right;
+      white-space: normal;
+      word-break: break-word;
+    }
     .dist-table th:first-child, .dist-table td:first-child { text-align: left; }
-    .dist-table thead th { color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; }
-    .dist-table thead th:hover { color: var(--primary); }
-    .dist-table thead tr:first-child th { text-align: center; border-bottom: 1px solid var(--border); cursor: default; }
-    .dist-table thead tr:first-child th:hover { color: var(--muted); }
-    .dist-table thead tr:first-child th.grupo { background: var(--bg); border-radius: 6px 6px 0 0; }
-    .diff-pos { color: #1a7f37; font-weight: 700; }
-    .diff-neg { color: #c0392b; font-weight: 700; }
+    .dist-table thead th {
+      color: var(--muted);
+      font-size: .7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      cursor: pointer;
+      user-select: none;
+      background: var(--card);
+      transition: color .15s;
+    }
+    .dist-table thead th:hover { color: var(--navy); }
+    .dist-table tbody td { font-family: 'DM Mono', monospace; font-size: .78rem; }
+    .dist-table tbody td:first-child { font-family: 'DM Sans', sans-serif; font-size: .82rem; color: var(--text); }
+    .dist-table tbody tr:nth-child(even) { background: #fafaf8; }
+    .dist-table tbody tr:hover { background: #f5f2ec; }
+
+    /* ── Diff colors ────────────────────────────────────────────── */
+    .diff-pos { color: var(--success); font-weight: 600; }
+    .diff-neg { color: var(--danger);  font-weight: 600; }
     .diff-zero { color: var(--muted); }
-    .diff-pos::before { content: "▲ "; }
-    .diff-neg::before { content: "▼ "; }
-    .kpi-valor.diff-pos, .kpi-sub.diff-pos { color: #1a7f37; }
-    .kpi-valor.diff-neg, .kpi-sub.diff-neg { color: #c0392b; }
+    .diff-pos::before { content: "▲ "; font-size: .75em; }
+    .diff-neg::before { content: "▼ "; font-size: .75em; }
+
+    .kpi-valor.diff-pos, .kpi-sub.diff-pos { color: var(--success); }
+    .kpi-valor.diff-neg, .kpi-sub.diff-neg { color: var(--danger); }
     .kpi-valor.diff-zero, .kpi-sub.diff-zero { color: var(--muted); }
 
-    /* Multiselect com checkboxes pesquisável */
+    .kpi-card:has(.diff-pos) { border-color: rgba(26,127,69,.25); }
+    .kpi-card:has(.diff-pos)::before { background: var(--success); }
+    .kpi-card:has(.diff-neg) { border-color: rgba(192,57,43,.25); }
+    .kpi-card:has(.diff-neg)::before { background: var(--danger); }
+
+    /* ── Multiselect ────────────────────────────────────────────── */
     .multiselect { position: relative; }
+
     .multiselect-toggle {
-      width: 100%; text-align: left; background: #fff; border: 1px solid var(--border);
-      border-radius: 8px; padding: 9px 12px; font-size: .9rem; cursor: pointer; color: var(--text);
+      width: 100%;
+      text-align: left;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 9px 36px 9px 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .88rem;
+      cursor: pointer;
+      color: var(--text);
+      transition: border-color .15s, box-shadow .15s;
+      position: relative;
     }
-    .multiselect-toggle:hover { border-color: var(--accent); }
+    .multiselect-toggle::after {
+      content: '';
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px; height: 8px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a8b9c' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+    }
+    .multiselect-toggle:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(224,117,46,.1);
+    }
+
     .multiselect-panel {
-      position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
-      background: #fff; border: 1px solid var(--border); border-radius: 8px;
-      box-shadow: 0 8px 24px rgba(0,0,0,.12); padding: 10px; max-height: 320px;
-      display: flex; flex-direction: column; gap: 8px;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0; right: 0;
+      z-index: 30;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      padding: 12px;
+      max-height: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
     .multiselect-panel[hidden] { display: none; }
+
     .multiselect-busca {
-      width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: .85rem;
+      width: 100%;
+      padding: 8px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .85rem;
+      transition: border-color .15s;
     }
+    .multiselect-busca:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
     .multiselect-actions { display: flex; gap: 8px; }
-    .multiselect-actions button { flex: 1; padding: 5px 8px; font-size: .78rem; }
-    .multiselect-list { overflow-y: auto; flex: 1; border-top: 1px solid var(--border); padding-top: 6px; }
+    .multiselect-actions button { flex: 1; padding: 6px 10px; font-size: .75rem; }
+
+    .multiselect-list {
+      overflow-y: auto;
+      flex: 1;
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+      max-height: 180px;
+    }
+
     .multiselect-item {
-      display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 4px; font-size: .85rem; cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 5px 8px;
+      border-radius: var(--radius-sm);
+      font-size: .84rem;
+      cursor: pointer;
+      transition: background .1s;
     }
     .multiselect-item:hover { background: var(--bg); }
-    .multiselect-item input { cursor: pointer; }
-    .multiselect-empty { display: none; padding: 6px; color: var(--muted); font-size: .85rem; text-align: center; }
+    .multiselect-item input { cursor: pointer; accent-color: var(--accent); }
+    .multiselect-empty { display: none; padding: 8px; color: var(--muted); font-size: .84rem; text-align: center; }
 
-    /* Telas/iframes estreitos (ex.: incorporação no Google Sites) */
+    /* ── Loading overlay ────────────────────────────────────────── */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      gap: 16px;
+      transition: opacity .4s, visibility .4s;
+    }
+    #loading-overlay.done { opacity: 0; visibility: hidden; }
+
+    .loader-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: -.02em;
+    }
+    .loader-logo span { color: var(--accent); }
+
+    .loader-bar {
+      width: 200px;
+      height: 3px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .loader-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--gold));
+      border-radius: 999px;
+      animation: loadBar 1.4s ease-in-out infinite;
+    }
+    @keyframes loadBar {
+      0%   { width: 0%; margin-left: 0; }
+      50%  { width: 70%; margin-left: 30%; }
+      100% { width: 0%; margin-left: 100%; }
+    }
+
+    .loader-text {
+      font-size: .78rem;
+      color: var(--muted);
+      letter-spacing: .04em;
+    }
+
+    /* ── Responsive ─────────────────────────────────────────────── */
     @media (max-width: 700px) {
-      main { padding: 0 10px 40px; }
-      .card { padding: 14px; }
+      header { padding: 0 16px; }
+      header h1 { font-size: 1.25rem; }
+      .tab-btn { padding: 10px 12px; font-size: .78rem; }
+      main { padding: 0 12px 40px; gap: 14px; }
+      .card { padding: 16px; }
       .dist-table, .dep-table { font-size: .72rem; min-width: 0; }
-      .dist-table th, .dist-table td, .dep-table th, .dep-table td { padding: 6px 4px; }
+      .dist-table th, .dist-table td, .dep-table th, .dep-table td { padding: 6px 6px; }
+      .kpi-card { padding: 14px 16px; }
+      .kpi-card .kpi-valor { font-size: 1.4rem; }
     }
   </style>
 </head>
 <body>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay">
+    <div class="loader-logo">TCE<span>-PE</span></div>
+    <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+    <div class="loader-text">Carregando dados municipais…</div>
+  </div>
+
   <header>
-    <h1>Receitas Municipais — TCE-PE</h1>
-    <p>Painel de receitas dos municípios de Pernambuco (Dados Abertos / TCE-PE)</p>
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="detalhamento" type="button">Detalhamento por Município</button>
-      <button class="tab-btn" data-tab="dependencia" type="button">Dependência de Receita Própria</button>
-      <button class="tab-btn" data-tab="dependencia-grupo" type="button">Dependência por Grupo Populacional</button>
-      <button class="tab-btn" data-tab="distribuicao" type="button">Distribuição por População</button>
+    <div class="header-inner">
+      <div class="header-eyebrow">
+        <span class="header-badge">Dados Abertos · TCE-PE</span>
+        <span class="header-dot"></span>
+        <span style="color:rgba(255,255,255,.35);font-size:.72rem;">Pernambuco</span>
+      </div>
+      <h1>Receitas <span>Municipais</span></h1>
+      <p>Painel de análise das receitas dos municípios de Pernambuco — Censo 2022 / IBGE</p>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="detalhamento" type="button">Detalhamento</button>
+        <button class="tab-btn" data-tab="dependencia" type="button">Dependência</button>
+        <button class="tab-btn" data-tab="dependencia-grupo" type="button">Por Grupo Populacional</button>
+        <button class="tab-btn" data-tab="distribuicao" type="button">Distribuição ICMS</button>
+      </div>
     </div>
   </header>
 
   <main>
-  <div id="tab-detalhamento" class="tab-content active">
-    <section class="card">
-      <h2>Detalhamento da receita por município e exercício</h2>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="detMunicipio">Município</label>
-          <select id="detMunicipio"></select>
-        </div>
-        <div class="form-group">
-          <label for="detAno">Exercício (ano)</label>
-          <select id="detAno"></select>
-        </div>
-      </div>
-      <div class="hint" style="margin-top:10px">
-        Clique em uma linha para expandir/recolher os níveis: Categoria → Origem → Espécie → Descrição.
-        Os valores são a soma de todos os meses do exercício selecionado.
-      </div>
-    </section>
 
-    <section class="card">
-      <div class="filtros">
-        <span class="badge" id="detResumo"></span>
-        <button id="btnExpandirTudo" class="secondary" type="button" style="margin-left:auto">Expandir tudo</button>
-        <button id="btnRecolherTudo" class="secondary" type="button">Recolher tudo</button>
-      </div>
-      <div class="table-wrap">
-        <table class="tree-table">
-          <thead>
-            <tr>
-              <th>Natureza da receita</th>
-              <th class="valor">Total lançado (R$)</th>
-            </tr>
-          </thead>
-          <tbody id="detTbody"></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
-
-  <div id="tab-dependencia" class="tab-content">
-    <section class="card">
-      <h2>Dependência da receita própria</h2>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="depMunicipio">Município</label>
-          <select id="depMunicipio"></select>
-        </div>
-      </div>
-      <div class="hint" style="margin-top:10px">
-        Compara a receita tributária própria (IPTU, ITBI, ISS, IRPF, Taxas) com as
-        Transferências Correntes recebidas pelo município, em 2023, 2024 e 2025.
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Dependência de transferências correntes</h2>
-      <div class="hint" style="margin-bottom:12px">
-        Total da espécie "Impostos" ÷ Total da origem "Transferências Correntes", por exercício.
-      </div>
-      <div class="kpi-row" id="depKpis"></div>
-    </section>
-
-    <section class="card">
-      <h2>Receita Tributária x Transferências Correntes</h2>
-      <div class="table-wrap">
-        <table class="dep-table" id="depTabela"></table>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Comparativo por exercício</h2>
-      <div class="chart-wrap">
-        <canvas id="depGrafico"></canvas>
-      </div>
-    </section>
-  </div>
-
-  <div id="tab-dependencia-grupo" class="tab-content">
-    <section class="card">
-      <h2>Dependência da receita própria por grupo populacional</h2>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="depGrupoSelecao">Grupo populacional (Censo 2022 — IBGE)</label>
-          <select id="depGrupoSelecao">
-            <option value="1">Grupo 1 — população &gt; 300 mil habitantes</option>
-            <option value="2">Grupo 2 — população entre 100 mil e 300 mil habitantes</option>
-            <option value="3">Grupo 3 — população entre 50 mil e 100 mil habitantes</option>
-            <option value="4">Grupo 4 — população entre 20 mil e 50 mil habitantes</option>
-            <option value="5">Grupo 5 — população entre 10 mil e 20 mil habitantes</option>
-            <option value="6">Grupo 6 — população inferior a 10 mil habitantes</option>
-          </select>
-        </div>
-      </div>
-      <div class="hint" style="margin-top:10px">
-        Os valores apresentados são a <strong>soma consolidada</strong> de todos os municípios do grupo
-        selecionado, comparando a receita tributária própria (IPTU, ITBI, ISS, IRPF, Taxas) com as
-        Transferências Correntes, em 2023, 2024 e 2025.
-      </div>
-      <div class="hint" id="depGrupoMunicipios" style="margin-top:8px"></div>
-    </section>
-
-    <section class="card">
-      <h2>Dependência de transferências correntes</h2>
-      <div class="hint" style="margin-bottom:12px">
-        Total da espécie "Impostos" ÷ Total da origem "Transferências Correntes", por exercício
-        (somatório de todos os municípios do grupo).
-      </div>
-      <div class="kpi-row" id="depGrupoKpis"></div>
-    </section>
-
-    <section class="card">
-      <h2>Receita Tributária x Transferências Correntes</h2>
-      <div class="table-wrap">
-        <table class="dep-table" id="depGrupoTabela"></table>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Comparativo por exercício</h2>
-      <div class="chart-wrap">
-        <canvas id="depGrupoGrafico"></canvas>
-      </div>
-    </section>
-  </div>
-
-  <div id="tab-distribuicao" class="tab-content">
-    <section class="card">
-      <h2>Distribuição da Cota-Parte ICMS por critério populacional</h2>
-      <div class="hint" style="margin-bottom:12px">
-        Compara o valor efetivamente recebido por cada município a título de Cota-Parte do ICMS com um
-        valor recalculado <strong>exclusivamente pela população</strong>: o total estadual da cota é
-        dividido pela soma da população de todos os municípios (exceto Recife) e multiplicado pela
-        população de cada município.
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="distAno">Exercício (ano)</label>
-          <select id="distAno"></select>
-        </div>
-        <div class="form-group">
-          <label for="distMunicipiosToggle">Municípios</label>
-          <div class="multiselect" id="distMunicipiosWrap">
-            <button type="button" class="multiselect-toggle" id="distMunicipiosToggle">Todos os municípios</button>
-            <div class="multiselect-panel" id="distMunicipiosPanel" hidden>
-              <input type="text" id="distMunicipiosBusca" class="multiselect-busca" placeholder="Buscar município..." />
-              <div class="multiselect-actions">
-                <button type="button" id="btnDistTodos" class="secondary">Selecionar todos</button>
-                <button type="button" id="btnDistLimpar" class="secondary">Limpar seleção</button>
-              </div>
-              <div class="multiselect-list" id="distMunicipiosList"></div>
-            </div>
+    <!-- ── ABA: DETALHAMENTO ─────────────────────────────────────── -->
+    <div id="tab-detalhamento" class="tab-content active">
+      <section class="card">
+        <h2>Detalhamento da receita por município e exercício</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="detMunicipio">Município</label>
+            <select id="detMunicipio"></select>
           </div>
-          <div class="hint">Nenhum selecionado = todos os municípios.</div>
+          <div class="form-group">
+            <label for="detAno">Exercício</label>
+            <select id="detAno"></select>
+          </div>
         </div>
-      </div>
-    </section>
+        <div class="hint" style="margin-top:10px">
+          Clique em uma linha para expandir/recolher: Categoria → Origem → Espécie → Descrição.
+          Valores somados de todos os meses do exercício selecionado.
+        </div>
+      </section>
 
-    <section class="card">
-      <h2>Diferenças (Recalculado − Recebido)</h2>
-      <div class="kpi-row" id="distKpis"></div>
-    </section>
+      <section class="card">
+        <div class="filtros">
+          <span class="badge" id="detResumo"></span>
+          <button id="btnExpandirTudo" class="secondary" type="button" style="margin-left:auto">↕ Expandir tudo</button>
+          <button id="btnRecolherTudo" class="secondary" type="button">↕ Recolher tudo</button>
+        </div>
+        <div class="table-wrap">
+          <table class="tree-table">
+            <thead>
+              <tr>
+                <th>Natureza da receita</th>
+                <th class="valor" style="text-align:right">Total lançado (R$)</th>
+              </tr>
+            </thead>
+            <tbody id="detTbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
 
-    <section class="card">
-      <div class="table-wrap">
-        <table class="dist-table" id="distTabela">
-          <thead>
-            <tr>
-              <th data-sort="municipio">Município</th>
-              <th data-sort="populacao">População</th>
-              <th data-sort="icmsRecebido">Valor Recebido</th>
-              <th data-sort="icmsRecalc">Valor Recalculado</th>
-              <th data-sort="diffIcms">Diferença (Recalculado − Recebido)</th>
-              <th data-sort="diffPct">Diferença %</th>
-            </tr>
-          </thead>
-          <tbody id="distTbody"></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
+    <!-- ── ABA: DEPENDÊNCIA ──────────────────────────────────────── -->
+    <div id="tab-dependencia" class="tab-content">
+      <section class="card">
+        <h2>Dependência da receita própria</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="depMunicipio">Município</label>
+            <select id="depMunicipio"></select>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:10px">
+          Compara a receita tributária própria (IPTU, ITBI, ISS, IRPF, Taxas) com as
+          Transferências Correntes recebidas, em 2023, 2024 e 2025.
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Índice de dependência de transferências</h2>
+        <div class="hint" style="margin-bottom:14px">
+          Total da espécie "Impostos" ÷ Total da origem "Transferências Correntes", por exercício.
+        </div>
+        <div class="kpi-row" id="depKpis"></div>
+      </section>
+
+      <section class="card">
+        <h2>Receita Tributária × Transferências Correntes</h2>
+        <div class="table-wrap">
+          <table class="dep-table" id="depTabela"></table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Comparativo por exercício</h2>
+        <div class="chart-wrap">
+          <canvas id="depGrafico"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <!-- ── ABA: DEPENDÊNCIA POR GRUPO ───────────────────────────── -->
+    <div id="tab-dependencia-grupo" class="tab-content">
+      <section class="card">
+        <h2>Dependência por grupo populacional</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="depGrupoSelecao">Grupo (Censo 2022 — IBGE)</label>
+            <select id="depGrupoSelecao">
+              <option value="1">Grupo 1 — população &gt; 300 mil habitantes</option>
+              <option value="2">Grupo 2 — 100 mil a 300 mil habitantes</option>
+              <option value="3">Grupo 3 — 50 mil a 100 mil habitantes</option>
+              <option value="4">Grupo 4 — 20 mil a 50 mil habitantes</option>
+              <option value="5">Grupo 5 — 10 mil a 20 mil habitantes</option>
+              <option value="6">Grupo 6 — menos de 10 mil habitantes</option>
+            </select>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:10px">
+          Valores apresentados como <strong>soma consolidada</strong> de todos os municípios do grupo,
+          comparando receita tributária com Transferências Correntes em 2023, 2024 e 2025.
+        </div>
+        <div class="hint" id="depGrupoMunicipios" style="margin-top:8px; line-height:1.6"></div>
+      </section>
+
+      <section class="card">
+        <h2>Índice de dependência de transferências</h2>
+        <div class="hint" style="margin-bottom:14px">
+          Total Impostos ÷ Total Transferências Correntes, por exercício (somatório do grupo).
+        </div>
+        <div class="kpi-row" id="depGrupoKpis"></div>
+      </section>
+
+      <section class="card">
+        <h2>Receita Tributária × Transferências Correntes</h2>
+        <div class="table-wrap">
+          <table class="dep-table" id="depGrupoTabela"></table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Comparativo por exercício</h2>
+        <div class="chart-wrap">
+          <canvas id="depGrupoGrafico"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <!-- ── ABA: DISTRIBUIÇÃO ─────────────────────────────────────── -->
+    <div id="tab-distribuicao" class="tab-content">
+      <section class="card">
+        <h2>Distribuição da Cota-Parte ICMS por população</h2>
+        <div class="hint" style="margin-bottom:14px">
+          Cada município mantém <strong>20% do valor recebido</strong> (parcela fixa). Os
+          <strong>80% restantes</strong> do total estadual são redistribuídos proporcionalmente
+          à população. A diferença mostra o impacto para cada município.
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="distAno">Exercício</label>
+            <select id="distAno"></select>
+          </div>
+          <div class="form-group">
+            <label for="distMunicipiosToggle">Municípios</label>
+            <div class="multiselect" id="distMunicipiosWrap">
+              <button type="button" class="multiselect-toggle" id="distMunicipiosToggle">Todos os municípios</button>
+              <div class="multiselect-panel" id="distMunicipiosPanel" hidden>
+                <input type="text" id="distMunicipiosBusca" class="multiselect-busca" placeholder="🔍 Buscar município…" />
+                <div class="multiselect-actions">
+                  <button type="button" id="btnDistTodos" class="secondary">Selecionar todos</button>
+                  <button type="button" id="btnDistLimpar" class="secondary">Limpar</button>
+                </div>
+                <div class="multiselect-list" id="distMunicipiosList"></div>
+              </div>
+            </div>
+            <div class="hint">Sem seleção = todos os municípios.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Diferenças consolidadas (Recalculado − Recebido)</h2>
+        <div class="kpi-row" id="distKpis"></div>
+      </section>
+
+      <section class="card">
+        <div class="table-wrap">
+          <table class="dist-table" id="distTabela">
+            <thead>
+              <tr>
+                <th data-sort="municipio">Município</th>
+                <th data-sort="populacao">População</th>
+                <th data-sort="icmsRecebido">Valor Recebido</th>
+                <th data-sort="icmsRecalc">Valor Recalculado</th>
+                <th data-sort="diffIcms">Diferença (R$)</th>
+                <th data-sort="diffPct">Diferença %</th>
+              </tr>
+            </thead>
+            <tbody id="distTbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
   </main>
 
+  <script>
+    // Remove loading overlay after data is ready
+    // app.js calls init() at the end; we hook into DOMContentLoaded + a tiny delay
+    // but the real removal happens after carregarDataset completes (patched below)
+    window.__hideLoader = function() {
+      const el = document.getElementById('loading-overlay');
+      if (el) el.classList.add('done');
+    };
+  </script>
   <script src="app.js"></script>
+  <script>
+    // Patch: hide loader once the dataset renders (distTbody or detTbody gets content)
+    (function() {
+      const observer = new MutationObserver(() => {
+        const ready = document.getElementById('detTbody')?.children.length > 0 ||
+                      document.getElementById('distTbody')?.children.length > 0;
+        if (ready) { window.__hideLoader(); observer.disconnect(); }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      // Fallback: always hide after 6s
+      setTimeout(window.__hideLoader, 6000);
+    })();
+  </script>
 </body>
 </html>
