@@ -666,6 +666,9 @@ function calcularDistribuicao(ano) {
   for (const r of registrosAno) {
     const desc = r.DESCRICAO || '';
     if (!desc.startsWith(PREFIXO_ICMS)) continue;
+    // Exclui deduções (ex.: retenção FUNDEB): usa apenas o valor bruto recebido,
+    // consistente com o que é exibido em "Receitas Correntes" na aba Detalhamento.
+    if (r.CATEGORIARECEITA === 'Dedução de Receitas') continue;
 
     const valor = Number(r.VALORLANCAMENTO) || 0;
     recebidoPorMunicipio.set(r.MUNICIPIO, (recebidoPorMunicipio.get(r.MUNICIPIO) || 0) + valor);
