@@ -421,31 +421,68 @@ function gerarTabelaDependenciaHTML(dados) {
   `;
 }
 
-// Linhas separadas para os dois gráficos
-const LINHAS_RECEITA_PROPRIA = LINHAS_DEPENDENCIA.filter(l => l.chave !== 'TRANSFERENCIAS');
-const LINHAS_TRANSFERENCIAS  = LINHAS_DEPENDENCIA.filter(l => l.chave === 'TRANSFERENCIAS');
-
-// Cria (ou recria) um gráfico de barras para um subconjunto de linhas
-function criarGraficoDependencia(canvasId, chartAtual, dados, linhas) {
+// Cria (ou recria) o gráfico com duplo eixo Y:
+//   eixo esquerdo  → receita tributária própria (IPTU, ITBI, ISS, IRPF, Outros, Taxas)
+//   eixo direito   → Transferências Correntes
+// Cada ano gera dois datasets (mesma cor): um para impostos (yLeft) e
+// outro para transferências (yRight). A legenda exibe apenas os 3 anos.
+function criarGraficoDependencia(canvasId, chartAtual, dados) {
   const ctx = document.getElementById(canvasId);
   if (!ctx) return null;
   if (chartAtual) chartAtual.destroy();
+
+  const labels = LINHAS_DEPENDENCIA.map(l => l.rotulo);
+
+  const datasets = ANOS_DEPENDENCIA.flatMap(ano => [
+    // Barras de impostos/taxas → eixo esquerdo
+    {
+      label: ano,
+      data: LINHAS_DEPENDENCIA.map(l =>
+        l.chave !== 'TRANSFERENCIAS' ? (dados[ano].linhas[l.chave] || 0) : null
+      ),
+      backgroundColor: COR_ANO[ano],
+      yAxisID: 'yLeft',
+    },
+    // Barra de transferências → eixo direito (mesma cor, sem entrada extra na legenda)
+    {
+      label: `${ano}_transf`,
+      data: LINHAS_DEPENDENCIA.map(l =>
+        l.chave === 'TRANSFERENCIAS' ? (dados[ano].linhas[l.chave] || 0) : null
+      ),
+      backgroundColor: COR_ANO[ano],
+      yAxisID: 'yRight',
+    },
+  ]);
+
   return new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels: linhas.map(l => l.rotulo),
-      datasets: ANOS_DEPENDENCIA.map(ano => ({
-        label: ano,
-        data: linhas.map(l => dados[ano].linhas[l.chave] || 0),
-        backgroundColor: COR_ANO[ano],
-      })),
-    },
+    data: { labels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { position: 'top' } },
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            // Exibe apenas os 3 primeiros datasets (um por ano, sem duplicar transferências)
+            filter: item => !item.text.endsWith('_transf'),
+          },
+        },
+      },
       scales: {
-        y: { ticks: { callback: v => fmtMoeda(v) } },
+        yLeft: {
+          type: 'linear',
+          position: 'left',
+          ticks: { callback: v => fmtMoeda(v) },
+          title: { display: true, text: 'Receita Tributária Própria', color: '#7a8b9c', font: { size: 11 } },
+        },
+        yRight: {
+          type: 'linear',
+          position: 'right',
+          ticks: { callback: v => fmtMoeda(v) },
+          title: { display: true, text: 'Transferências Correntes', color: '#7a8b9c', font: { size: 11 } },
+          grid: { drawOnChartArea: false }, // evita linhas de grade duplicadas
+        },
       },
     },
   });
@@ -461,8 +498,7 @@ function renderizarDependencia() {
   if (!municipio) {
     kpisEl.innerHTML = '<div class="hint">Selecione um município para ver os indicadores.</div>';
     tabelaEl.innerHTML = '';
-    if (depChart)      { depChart.destroy();      depChart = null; }
-    if (depChartTransf){ depChartTransf.destroy(); depChartTransf = null; }
+    if (depChart) { depChart.destroy(); depChart = null; }
     return;
   }
 
@@ -470,8 +506,7 @@ function renderizarDependencia() {
 
   kpisEl.innerHTML = gerarKpisDependenciaHTML(dados);
   tabelaEl.innerHTML = gerarTabelaDependenciaHTML(dados);
-  depChart      = criarGraficoDependencia('depGrafico',      depChart,      dados, LINHAS_RECEITA_PROPRIA);
-  depChartTransf = criarGraficoDependencia('depGraficoTransf', depChartTransf, dados, LINHAS_TRANSFERENCIAS);
+  depChart = criarGraficoDependencia('depGrafico', depChart, dados);
 }
 
 // ── Dependência por grupo populacional ───────────────────────────
@@ -496,7 +531,7 @@ function municipiosDoGrupo(grupoId) {
   });
 }
 
-let depGrupoChart, depGrupoChartTransf;
+let depGrupoChart;
 
 function initDependenciaGrupo() {
   document.getElementById('depGrupoSelecao').addEventListener('change', renderizarDependenciaGrupo);
@@ -514,8 +549,7 @@ function renderizarDependenciaGrupo() {
     kpisEl.innerHTML = '<div class="hint">Nenhum município encontrado para este grupo.</div>';
     tabelaEl.innerHTML = '';
     municipiosEl.innerHTML = '';
-    if (depGrupoChart)      { depGrupoChart.destroy();      depGrupoChart = null; }
-    if (depGrupoChartTransf){ depGrupoChartTransf.destroy(); depGrupoChartTransf = null; }
+    if (depGrupoChart) { depGrupoChart.destroy(); depGrupoChart = null; }
     return;
   }
 
@@ -528,8 +562,7 @@ function renderizarDependenciaGrupo() {
 
   kpisEl.innerHTML = gerarKpisDependenciaHTML(dados);
   tabelaEl.innerHTML = gerarTabelaDependenciaHTML(dados);
-  depGrupoChart      = criarGraficoDependencia('depGrupoGrafico',      depGrupoChart,      dados, LINHAS_RECEITA_PROPRIA);
-  depGrupoChartTransf = criarGraficoDependencia('depGrupoGraficoTransf', depGrupoChartTransf, dados, LINHAS_TRANSFERENCIAS);
+  depGrupoChart = criarGraficoDependencia('depGrupoGrafico', depGrupoChart, dados);
 }
 
 // ── Aba: Distribuição por critério populacional ──────────────────
